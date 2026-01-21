@@ -1,7 +1,7 @@
 # Production-Ready Asynchronous Payment Gateway
 
-- **Author:** Beri Lalitha Devi
-- **Roll:** 23A91A6108
+- **Author:** Aravelli Vishnu Priya
+- **Roll:** 23A91A05E1
 
 ## 🚀 Deployment
 1. **Infrastructure**: Start Docker services via `docker-compose up -d`.
