@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Select Payment Method</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f5f7fb;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .container {
+            background: #fff;
+            width: 100%;
+            max-width: 420px;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        }
+
+        h3 {
+            margin: 0 0 8px;
+            font-size: 20px;
+        }
+
+        .amount {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            color: #2c2c2c;
+        }
+
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        button {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            font-size: 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            border: none;
+            transition: transform 0.1s ease, box-shadow 0.1s ease, opacity 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .upi-btn {
+            background: linear-gradient(135deg, #673ab7, #512da8);
+            color: #fff;
+        }
+
+        .card-btn {
+            background: linear-gradient(135deg, #2196f3, #1976d2);
+            color: #fff;
+        }
+
+        .icon {
+            font-size: 20px;
+        }
+
+        .footer-note {
+            margin-top: 20px;
+            font-size: 13px;
+            color: #777;
+            text-align: center;
+        }
+
+        .processing {
+            text-align: center;
+        }
+
+        .spinner {
+            margin: 20px auto;
+            width: 36px;
+            height: 36px;
+            border: 4px solid #ddd;
+            border-top: 4px solid #673ab7;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container" id="app">
+    <h3>Select Payment Method</h3>
+    <div class="amount">₹500.00</div>
+
+    <div class="btn-group">
+        <button
+            data-test-id="upi-payment-button"
+            class="upi-btn"
+            onclick="processPayment('upi')"
+        >
+            <span class="icon">📱</span>
+            Pay via UPI
+        </button>
+
+        <button
+            data-test-id="card-payment-button"
+            class="card-btn"
+            onclick="processPayment('card')"
+        >
+            <span class="icon">💳</span>
+            Pay via Credit / Debit Card
+        </button>
+    </div>
+
+    <div class="footer-note">
+        Secure payments • 100% encrypted
+    </div>
+</div>
+
+<script>
+    async function processPayment(method) {
+        const buttons = document.querySelectorAll('button');
+        buttons.forEach(btn => btn.disabled = true);
+
+        const app = document.getElementById('app');
+        app.innerHTML = `
+            <div class="processing">
+                <h3>Processing Payment</h3>
+                <div class="spinner"></div>
+                <p>Please wait while we initiate your payment.</p>
+            </div>
+        `;
+
+        const params = new URLSearchParams(window.location.search);
+        const orderId = params.get('order_id');
+
+        try {
+            const res = await fetch('http://localhost:8000/api/v1/payments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    order_id: orderId,
+                    amount: 50000, // demo
+                    method: method
+                })
+            });
+
+            const data = await res.json();
+
+            window.parent.postMessage({
+                type: 'payment_initiated',
+                data: { payment_id: data.id, status: 'pending' }
+            }, '*');
+
+            app.innerHTML = `
+                <div class="processing">
+                    <h3>Payment Initiated</h3>
+                    <p>You may safely close this window.</p>
+                    <p>We’ll notify the merchant once the payment is confirmed.</p>
+                </div>
+            `;
+        } catch (err) {
+            app.innerHTML = `
+                <div class="processing">
+                    <h3>Something went wrong</h3>
+                    <p>Please try again.</p>
+                </div>
+            `;
+        }
+    }
+</script>
+
+</body>
+</html>
